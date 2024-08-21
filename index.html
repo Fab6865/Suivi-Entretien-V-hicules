@@ -1,0 +1,268 @@
+<html><head><base href="https://www.suivideflotte.net/uploads/2021/12/TCO-4.png%20logo">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi d'Entretien de Véhicules</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto 20px;
+            max-width: 200px;
+        }
+        .menu {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .menu button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .menu button:hover {
+            background-color: #45a049;
+        }
+        .content {
+            display: none;
+        }
+        .content.active {
+            display: block;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        input, select {
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        button[type="submit"] {
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+        button[type="submit"]:hover {
+            background-color: #007B9A;
+        }
+        .vehicle-list, .maintenance-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .vehicle-item, .maintenance-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+        .color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://www.suivideflotte.net/uploads/2021/12/TCO-4.png" alt="Logo de suivi de flotte, graphique circulaire représentant le coût total de possession" width="200" height="150" class="logo">
+        <h1>Suivi d'Entretien de Véhicules</h1>
+        <div class="menu">
+            <button onclick="showContent('vehicles')">Véhicules</button>
+            <button onclick="showContent('maintenance')">Entretien</button>
+            <button onclick="showContent('history')">Historique</button>
+        </div>
+        
+        <div id="vehicles" class="content">
+            <h2>Ajouter un véhicule</h2>
+            <form id="vehicle-form">
+                <input type="text" id="vehicle-type" placeholder="Type de véhicule" required>
+                <input type="text" id="vehicle-brand" placeholder="Marque" required>
+                <input type="text" id="vehicle-model" placeholder="Modèle" required>
+                <input type="number" id="vehicle-km" placeholder="Kilométrage" required>
+                <input type="color" id="vehicle-color" required>
+                <button type="submit">Ajouter</button>
+            </form>
+            <h2>Liste des véhicules</h2>
+            <ul id="vehicle-list" class="vehicle-list"></ul>
+        </div>
+        
+        <div id="maintenance" class="content">
+            <h2>Ajouter un entretien</h2>
+            <form id="maintenance-form">
+                <select id="maintenance-vehicle" required></select>
+                <input type="text" id="maintenance-type" placeholder="Type d'entretien" required>
+                <input type="date" id="maintenance-date" required>
+                <input type="number" id="maintenance-km" placeholder="Kilométrage" required>
+                <input type="number" id="maintenance-price" placeholder="Prix" step="0.01" required>
+                <button type="submit">Ajouter</button>
+            </form>
+        </div>
+        
+        <div id="history" class="content">
+            <h2>Historique des entretiens</h2>
+            <select id="history-vehicle" onchange="showHistory()"></select>
+            <ul id="history-list" class="maintenance-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        let vehicles = JSON.parse(localStorage.getItem('vehicles')) || [];
+        let maintenances = JSON.parse(localStorage.getItem('maintenances')) || [];
+
+        function showContent(id) {
+            document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function saveData() {
+            localStorage.setItem('vehicles', JSON.stringify(vehicles));
+            localStorage.setItem('maintenances', JSON.stringify(maintenances));
+        }
+
+        document.getElementById('vehicle-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const vehicle = {
+                id: Date.now(),
+                type: document.getElementById('vehicle-type').value,
+                brand: document.getElementById('vehicle-brand').value,
+                model: document.getElementById('vehicle-model').value,
+                km: document.getElementById('vehicle-km').value,
+                color: document.getElementById('vehicle-color').value
+            };
+            vehicles.push(vehicle);
+            saveData();
+            updateVehicleList();
+            this.reset();
+        });
+
+        document.getElementById('maintenance-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const maintenance = {
+                id: Date.now(),
+                vehicleId: document.getElementById('maintenance-vehicle').value,
+                type: document.getElementById('maintenance-type').value,
+                date: document.getElementById('maintenance-date').value,
+                km: document.getElementById('maintenance-km').value,
+                price: document.getElementById('maintenance-price').value
+            };
+            maintenances.push(maintenance);
+            saveData();
+            this.reset();
+            showContent('history');
+            showHistory();
+        });
+
+        function updateVehicleList() {
+            const vehicleList = document.getElementById('vehicle-list');
+            const maintenanceVehicle = document.getElementById('maintenance-vehicle');
+            const historyVehicle = document.getElementById('history-vehicle');
+            
+            vehicleList.innerHTML = '';
+            maintenanceVehicle.innerHTML = '';
+            historyVehicle.innerHTML = '';
+
+            vehicles.forEach(vehicle => {
+                const li = document.createElement('li');
+                li.className = 'vehicle-item';
+                li.style.backgroundColor = vehicle.color;
+                li.style.color = getContrastColor(vehicle.color);
+                li.innerHTML = `
+                    ${vehicle.type} ${vehicle.brand} ${vehicle.model} - ${vehicle.km} km
+                    <button class="delete-btn" onclick="deleteVehicle(${vehicle.id})">Supprimer</button>
+                `;
+                vehicleList.appendChild(li);
+
+                const option = document.createElement('option');
+                option.value = vehicle.id;
+                option.textContent = `${vehicle.type} ${vehicle.brand} ${vehicle.model}`;
+                maintenanceVehicle.appendChild(option.cloneNode(true));
+                historyVehicle.appendChild(option);
+            });
+        }
+
+        function deleteVehicle(id) {
+            vehicles = vehicles.filter(v => v.id !== id);
+            maintenances = maintenances.filter(m => m.vehicleId !== id.toString());
+            saveData();
+            updateVehicleList();
+            showHistory();
+        }
+
+        function showHistory() {
+            const vehicleId = document.getElementById('history-vehicle').value;
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+
+            const vehicle = vehicles.find(v => v.id.toString() === vehicleId);
+            if (!vehicle) return;
+
+            const vehicleMaintenances = maintenances.filter(m => m.vehicleId === vehicleId);
+            vehicleMaintenances.forEach(maintenance => {
+                const li = document.createElement('li');
+                li.className = 'maintenance-item';
+                li.innerHTML = `
+                    <span class="color-indicator" style="background-color: ${vehicle.color};"></span>
+                    ${maintenance.type} - ${maintenance.date} - ${maintenance.km} km - ${maintenance.price} €
+                    <button class="delete-btn" onclick="deleteMaintenance(${maintenance.id})">Supprimer</button>
+                `;
+                historyList.appendChild(li);
+            });
+        }
+
+        function deleteMaintenance(id) {
+            maintenances = maintenances.filter(m => m.id !== id);
+            saveData();
+            showHistory();
+        }
+
+        function getContrastColor(hexcolor) {
+            hexcolor = hexcolor.replace("#", "");
+            var r = parseInt(hexcolor.substr(0,2),16);
+            var g = parseInt(hexcolor.substr(2,2),16);
+            var b = parseInt(hexcolor.substr(4,2),16);
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? 'black' : 'white';
+        }
+
+        updateVehicleList();
+        showContent('vehicles');
+    </script>
+</body>
+</html>
